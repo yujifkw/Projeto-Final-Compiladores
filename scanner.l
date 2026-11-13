@@ -3,7 +3,7 @@
  * scanner.l - Analisador léxico da linguagem C- (Flex).
  *
  * Qualquer erro léxico imprime "ERRO LEXICO: "lexema" - LINHA: X" e encerra a
- * compilação. 
+ * compilação.
  */
 #include <errno.h>
 #include <limits.h>
@@ -13,7 +13,7 @@
 
 #include "parser.tab.h"
 
-char txt_ultimo_token[64] = "";  // Texto do último token lido; usado pelo parser nas mensagens de erro. 
+char txt_ultimo_token[64] = "";  // Texto do último token lido; usado pelo parser nas mensagens de erro.
 
 static int comment_line = 0;
 
@@ -24,28 +24,27 @@ static void erro_lexico(const char *lexema, int linha)
     exit(EXIT_FAILURE);
 }
 
-// Antes de cada ação: registra linha do token e o lexema atual para fazer as mensagens de erro. 
+/* Antes de cada ação: registra linha do token e o lexema atual para fazer as mensagens de erro. */
 #define YY_USER_ACTION                                                      \
     yylloc.first_line = yylloc.last_line = yylineno;                        \
     strncpy(txt_ultimo_token, yytext, sizeof(txt_ultimo_token) - 1);        \
     txt_ultimo_token[sizeof(txt_ultimo_token) - 1] = '\0';
 %}
 
-// yylineno guarda o numero da linha de codigo que esta sendo analisada
-%option noyywrap yylineno 
+/* yylineno guarda o numero da linha de codigo que esta sendo analisada. */
+%option noyywrap yylineno
 
-
-// %x (exclusivo): enquanto o scanner está nesse estado, só valem as regras marcadas com ele. Todas as outras ficam desligadas.
-// Usamos %x porque dentro de um comentário nada deve ser reconhecido. Um if ou um + escrito dentro do comentário não pode virar token.
-// ao ler "\*" muda para o estado comment que consome qualquer coisa que não seja "*/" sem gerar tokens.
-%x COMMENT 
+/* %x (exclusivo): enquanto o scanner está nesse estado, só valem as regras marcadas com ele. Todas as outras ficam desligadas.
+   Usamos %x porque dentro de um comentário nada deve ser reconhecido. Um if ou um + escrito dentro do comentário não pode virar token.
+   Ao ler "barra asterisco" muda para o estado COMMENT que consome qualquer coisa que não seja "asterisco barra" sem gerar tokens. */
+%x COMMENT
 
 %%
 
 "/*"                { comment_line = yylineno; BEGIN(COMMENT); }
-<COMMENT>"*/"       { BEGIN(INITIAL); // começa o estado initial, que é o padrão e usa as regras abaixo }
-<COMMENT>[^*]+      { // conteúdo do comentário }
-<COMMENT>"*"        { // asterisco isolado  }
+<COMMENT>"*/"       { BEGIN(INITIAL); /* começa o estado INITIAL, que é o padrão e usa as regras abaixo */ }
+<COMMENT>[^*]+      { /* conteúdo do comentário */ }
+<COMMENT>"*"        { /* asterisco isolado */ }
 <COMMENT><<EOF>>    {
                         yylloc.first_line = comment_line;
                         erro_lexico("/*", comment_line);
@@ -89,7 +88,7 @@ static void erro_lexico(const char *lexema, int linha)
 
 [a-zA-Z]+           { return ID; }
 
-[a-zA-Z0-9_]*[0-9_][a-zA-Z0-9_]*  { erro_lexico(yytext, yylineno); // identificador não pode ter numeros}
+[a-zA-Z0-9_]*[0-9_][a-zA-Z0-9_]*  { erro_lexico(yytext, yylineno); /* identificador não pode ter numeros */ }
 
 [ \t\r\n]+          { /* espaços em branco */ }
 
@@ -99,6 +98,6 @@ static void erro_lexico(const char *lexema, int linha)
                         yyterminate(); // É um macro do Flex que encerra a leitura do arquivo: o scanner devolve 0 ao parser, e o Bison entende esse 0 como “fim da entrada” (o token $end).
                     }
 
-.                   { erro_lexico(yytext, yylineno); // caso nao reconheça nada da erro}
+.                   { erro_lexico(yytext, yylineno); /* caso nao reconheça nada da erro */ }
 
 %%
