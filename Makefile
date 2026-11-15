@@ -22,12 +22,12 @@ else
     BISON = bison
 endif
 
-OBJS = parser.tab.o lex.yy.o ast.o
+OBJS = parser.tab.o lex.yy.o ast.o symtab.o
 
 cminus: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS)
 
-parser.tab.c parser.tab.h: parser.y ast.h
+parser.tab.c parser.tab.h: parser.y ast.h symtab.h
 	$(BISON) -d -o parser.tab.c parser.y
 
 lex.yy.c: scanner.l parser.tab.h ast.h
@@ -40,6 +40,9 @@ parser.tab.o: parser.tab.c
 	$(CC) $(CFLAGS) -Wno-unused-function -c -o $@ $<
 
 ast.o: ast.c ast.h
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+symtab.o: symtab.c symtab.h ast.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:

@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "ast.h"
+#include "symtab.h"
 
 int yylex(void);
 void yyerror(const char *msg);
@@ -498,6 +499,9 @@ int main(int argc, char **argv)
         return 1;
     }
 
+    popular_tabela_simbolos(raiz_ast);
+    imprimir_tabela_simbolos();
+
     printf("\n================================================================================\n");
     printf("                     ARVORE SINTATICA ABSTRATA (AST)\n");
     printf("================================================================================\n");
@@ -508,6 +512,7 @@ int main(int argc, char **argv)
         printf("\n[Info] Arquivo Graphviz gerado em \"ast.dot\".\n");
     }
 
+    liberar_tabela_simbolos();
     liberar_ast(raiz_ast);
     return 0;
 }
