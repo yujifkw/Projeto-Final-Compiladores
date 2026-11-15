@@ -1,0 +1,13 @@
+/* Teste de erro sintatico e recuperacao de erro em C- */
+int soma(int a, int b)
+{
+    int x;
+    x = a + ;
+    return a + b;
+}
+
+void main(void)
+{
+    int y;
+    y = soma(1, 2);
+}
