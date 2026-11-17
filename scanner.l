@@ -11,11 +11,24 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ast.h"
 #include "parser.tab.h"
 
 char txt_ultimo_token[64] = "";  // Texto do último token lido; usado pelo parser nas mensagens de erro.
 
 static int comment_line = 0;
+
+static char *duplicar_lexema(const char *s)
+{
+    size_t n = strlen(s) + 1;
+    char *copia = (char *)malloc(n);
+    if (copia == NULL) {
+        fprintf(stderr, "Erro fatal: falta de memoria no scanner.\n");
+        exit(EXIT_FAILURE);
+    }
+    memcpy(copia, s, n);
+    return copia;
+}
 
 static void erro_lexico(const char *lexema, int linha)
 {
@@ -25,14 +38,19 @@ static void erro_lexico(const char *lexema, int linha)
 }
 
 /* Antes de cada ação: registra linha do token e o lexema atual para fazer as mensagens de erro. */
-#define YY_USER_ACTION                                                      \
-    yylloc.first_line = yylloc.last_line = yylineno;                        \
-    strncpy(txt_ultimo_token, yytext, sizeof(txt_ultimo_token) - 1);        \
-    txt_ultimo_token[sizeof(txt_ultimo_token) - 1] = '\0';
+#define YY_USER_ACTION                                                              \
+    yylloc.first_line = yylloc.last_line = yylineno;                                \
+    if (YY_START == INITIAL &&                                                      \
+        yytext[0] != ' ' && yytext[0] != '\t' &&                                    \
+        yytext[0] != '\r' && yytext[0] != '\n' &&                                   \
+        strncmp(yytext, "/*", 2) != 0) {                                            \
+        strncpy(txt_ultimo_token, yytext, sizeof(txt_ultimo_token) - 1);            \
+        txt_ultimo_token[sizeof(txt_ultimo_token) - 1] = '\0';                      \
+    }
 %}
 
 /* yylineno guarda o numero da linha de codigo que esta sendo analisada. */
-%option noyywrap yylineno
+%option noyywrap yylineno nounput noinput
 
 /* %x (exclusivo): enquanto o scanner está nesse estado, só valem as regras marcadas com ele. Todas as outras ficam desligadas.
    Usamos %x porque dentro de um comentário nada deve ser reconhecido. Um if ou um + escrito dentro do comentário não pode virar token.
@@ -50,12 +68,12 @@ static void erro_lexico(const char *lexema, int linha)
                         erro_lexico("/*", comment_line);
                     }
 
-"else"              { return ELSE; }
-"if"                { return IF; }
-"int"               { return INT; }
-"return"            { return RETURN; }
-"void"              { return VOID; }
-"while"             { return WHILE; }
+"else"              { return TOK_ELSE; }
+"if"                { return TOK_IF; }
+"int"               { return TOK_INT; }
+"return"            { return TOK_RETURN; }
+"void"              { return TOK_VOID; }
+"while"             { return TOK_WHILE; }
 
 "+"                 { return MAIS; }
 "-"                 { return MENOS; }
@@ -83,10 +101,14 @@ static void erro_lexico(const char *lexema, int linha)
                         valor = strtol(yytext, NULL, 10);          // strtol(const char *str, char **endptr, int base); transforma str pra int, endptr não importa pois o final do numero é o final da expressao
                         if (errno == ERANGE || valor > INT_MAX)    // evita que o numero seja maior que o espaço de um int, ERANGE é o valor que o errno.h poe no errno caso acabe o espaço
                             erro_lexico(yytext, yylineno);
+                        yylval.ival = (int)valor;
                         return NUM;
                     }
 
-[a-zA-Z]+           { return ID; }
+[a-zA-Z]+           {
+                        yylval.sval = duplicar_lexema(yytext);
+                        return ID;
+                    }
 
 [a-zA-Z0-9_]*[0-9_][a-zA-Z0-9_]*  { erro_lexico(yytext, yylineno); /* identificador não pode ter numeros */ }
 

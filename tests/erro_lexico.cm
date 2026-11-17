@@ -1,0 +1,6 @@
+/* Teste de erro lexico em C-: caractere invalido */
+void main(void)
+{
+    int x;
+    x = 10 @ 2;
+}
