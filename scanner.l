@@ -112,7 +112,7 @@ static void erro_lexico(const char *lexema, int linha)
 
 [a-zA-Z0-9_]*[0-9_][a-zA-Z0-9_]*  { erro_lexico(yytext, yylineno); /* identificador não pode ter numeros */ }
 
-[ \t\r\n]+          { /* espaços em branco */ }
+[ \t\r\n\f\v]+          { /* espaços em branco */ }
 
 <<EOF>>             {
                         strcpy(txt_ultimo_token, "EOF");
