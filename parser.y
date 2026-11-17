@@ -49,12 +49,16 @@ NoAST *raiz_ast = NULL;
 %left MAIS MENOS
 %left MULT DIV
 
-%type <no> programa lista_declaracoes declaracao declaracao_var declaracao_fun
+%type <no> lista_declaracoes declaracao declaracao_var declaracao_fun
 %type <no> parametros lista_parametros parametro
 %type <no> bloco declaracoes_locais lista_comandos
 %type <no> comando comando_expressao comando_selecao comando_iteracao comando_retorno
 %type <no> expressao variavel expressao_simples fator chamada argumentos lista_argumentos
 %type <tipo> especificador_tipo
+
+/* Libera valores descartados na recuperação de erros ou no abandono do parser. */
+%destructor { free($$); } <sval>
+%destructor { liberar_ast($$); } <no>
 
 %%
 
@@ -63,7 +67,6 @@ programa
     : lista_declaracoes
         {
             raiz_ast = $1;
-            $$ = $1;
         }
     ;
 
@@ -467,6 +470,8 @@ void yyerror(const char *msg)
     char expected[256];
 
     format_expected(msg, expected, sizeof expected);
+    if (strcmp(txt_ultimo_token, "EOF") == 0 && strcmp(expected, "construcao valida") == 0)
+        snprintf(expected, sizeof expected, "}");
 
     erros_sintaticos++;
 

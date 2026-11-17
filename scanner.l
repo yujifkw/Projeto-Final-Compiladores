@@ -120,6 +120,8 @@ static void erro_lexico(const char *lexema, int linha)
                         yyterminate(); // É um macro do Flex que encerra a leitura do arquivo: o scanner devolve 0 ao parser, e o Bison entende esse 0 como “fim da entrada” (o token $end).
                     }
 
+[\x80-\xFF]+       { erro_lexico(yytext, yylineno); /* caractere acentuado (UTF-8): mostra o caractere inteiro */ }
+
 .                   { erro_lexico(yytext, yylineno); /* caso nao reconheça nada da erro */ }
 
 %%
